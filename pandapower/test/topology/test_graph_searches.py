@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2016-2018 by University of Kassel and Fraunhofer Institute for Energy Economics
+# Copyright (c) 2016-2019 by University of Kassel and Fraunhofer Institute for Energy Economics
 # and Energy System Technology (IEE), Kassel. All rights reserved.
 
 
@@ -8,7 +8,8 @@ import numpy as np
 import pandapower as pp
 import pytest
 import pandapower.topology as top
-
+import pandapower.networks as nw
+import networkx as nx
 
 @pytest.fixture
 def feeder_network():
@@ -162,6 +163,52 @@ def test_graph_characteristics(feeder_network):
     assert notn1_areas == {8: {9, 10}, 3: {4, 5, 6}, 2: {11, 12, 13}}
 
 
+def test_elements_on_path():
+    net = nw.example_simple()
+    for multi in [True, False]:
+        mg = top.create_nxgraph(net, multi=multi)
+        path = nx.shortest_path(mg, 0, 6)
+        assert top.elements_on_path(mg, path, "line") == [0, 3]
+        assert top.lines_on_path(mg, path) == [0, 3]
+        assert top.elements_on_path(mg, path, "trafo") == [0]
+        assert top.elements_on_path(mg, path, "trafo3w") == []
+        assert top.elements_on_path(mg, path, "switch") == [0, 1]    
+
+def test_end_points_of_continously_connected_lines():
+    net = pp.create_empty_network()
+    b0 = pp.create_bus(net, vn_kv=20.)
+    b1 = pp.create_bus(net, vn_kv=20.)
+    b2 = pp.create_bus(net, vn_kv=20.)
+    b3 = pp.create_bus(net, vn_kv=20.)
+    b4 = pp.create_bus(net, vn_kv=20.)
+    b5 = pp.create_bus(net, vn_kv=20.)
+    b5 = pp.create_bus(net, vn_kv=20.)
+    b5 = pp.create_bus(net, vn_kv=20.)
+    b6 = pp.create_bus(net, vn_kv=20.)
+    b7 = pp.create_bus(net, vn_kv=20.)
+    
+    l1 = pp.create_line(net, from_bus=b0, to_bus=b1, length_km=2., std_type="34-AL1/6-ST1A 20.0")
+    l2 = pp.create_line(net, from_bus=b1, to_bus=b2, length_km=2., std_type="34-AL1/6-ST1A 20.0")
+    pp.create_switch(net, bus=b2, element=b3, et="b")
+    pp.create_switch(net, bus=b3, element=b4, et="b")
+    pp.create_switch(net, bus=b4, element=b5, et="b")
+    l3 = pp.create_line(net, from_bus=b5, to_bus=b6, length_km=2., std_type="34-AL1/6-ST1A 20.0")
+    l4 = pp.create_line(net, from_bus=b6, to_bus=b7, length_km=2., std_type="34-AL1/6-ST1A 20.0")
+       
+    f, t = top.get_end_points_of_continously_connected_lines(net, lines=[l2, l1])
+    assert {f, t} == {b0, b2}
+    
+    f, t = top.get_end_points_of_continously_connected_lines(net, lines=[l2, l1, l3])
+    assert {f, t} == {b0, b6}
+
+    f, t = top.get_end_points_of_continously_connected_lines(net, lines=[l3])
+    assert {f, t} == {b5, b6}
+
+    with pytest.raises(UserWarning):
+        top.get_end_points_of_continously_connected_lines(net, lines=[l1, l2, l4])
+
+    with pytest.raises(UserWarning):
+        top.get_end_points_of_continously_connected_lines(net, lines=[l1, l4])
+
 if __name__ == '__main__':
-    pass
-#    pytest.main(["test_graph_searches.py"])
+    pytest.main([__file__])

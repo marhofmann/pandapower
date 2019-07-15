@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2016-2018 by University of Kassel and Fraunhofer Institute for Energy Economics
+# Copyright (c) 2016-2019 by University of Kassel and Fraunhofer Institute for Energy Economics
 # and Energy System Technology (IEE), Kassel. All rights reserved.
 
 
@@ -14,5 +14,6 @@ Q_STD = 5
 VM_IDX = 6
 P_IDX = 7
 Q_IDX = 8
+ZERO_INJ_FLAG = 9
 
-bus_cols_se = 9
+bus_cols_se = 10

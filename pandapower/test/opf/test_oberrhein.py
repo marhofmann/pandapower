@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2016-2018 by University of Kassel and Fraunhofer Institute for Energy Economics
+# Copyright (c) 2016-2019 by University of Kassel and Fraunhofer Institute for Energy Economics
 # and Energy System Technology (IEE), Kassel. All rights reserved.
 
 
@@ -25,15 +25,15 @@ def test_opf_oberrhein():
     net.bus["min_vm_pu"] = 0.9
     net.line["max_loading_percent"] = 200
     net.trafo["max_loading_percent"] = 100
-    net.sgen["min_p_kw"] = -net.sgen.sn_kva
-    net.sgen["max_p_kw"] = 0
-    net.sgen["max_q_kvar"] = 1
-    net.sgen["min_q_kvar"] = -1
+    net.sgen["min_p_mw"] = -net.sgen.sn_mva
+    net.sgen["max_p_mw"] = 0
+    net.sgen["max_q_mvar"] = 1
+    net.sgen["min_q_mvar"] = -1
     net.sgen["controllable"] = 1
     net.load["controllable"] = 0
     # run OPF
-    pp.runopp(net, verbose=False)
+    pp.runopp(net, )
     assert net["OPF_converged"]
 
 if __name__ == "__main__":
-    pytest.main(["test_oberrhein.py", "-xs"])
+    pytest.main(["-xs"])

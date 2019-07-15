@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2016-2018 by University of Kassel and Fraunhofer Institute for Energy Economics
+# Copyright (c) 2016-2019 by University of Kassel and Fraunhofer Institute for Energy Economics
 # and Energy System Technology (IEE), Kassel. All rights reserved.
 
 
@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 import pandapower.converter as cv
 from pandapower.test.converter.test_from_ppc import get_testgrids
-from pandapower.idx_bus import VM, BUS_I, VA
+from pandapower.pypower.idx_bus import VM, BUS_I, VA
 from pandapower.powerflow import LoadflowNotConverged, reset_results
 from pandapower.pf.runpf_pypower import _runpf_pypower
 
@@ -34,7 +34,7 @@ def test_to_ppc_and_mpc():
         # validate voltage results of pandapower-to-ppc-converted grids vs. original pypower results
         net["_options"]['ac'] = True
         net["_options"]['numba'] = True
-        net["_options"]['tolerance_kva'] = 1e-5
+        net["_options"]['tolerance_mva'] = 1e-8
         net["_options"]['algorithm'] = "fdbx"
         net["_options"]['max_iteration'] = 30
         net["_options"]['enforce_q_lims'] = False

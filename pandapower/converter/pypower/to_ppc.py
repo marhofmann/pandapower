@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2016-2018 by University of Kassel and Fraunhofer Institute for Energy Economics
+# Copyright (c) 2016-2019 by University of Kassel and Fraunhofer Institute for Energy Economics
 # and Energy System Technology (IEE), Kassel. All rights reserved.
 
 
@@ -16,7 +16,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def to_ppc(net, calculate_voltage_angles=False, trafo_model="t", r_switch=0.0,
+def to_ppc(net, calculate_voltage_angles=False, trafo_model="t", switch_rx_ratio=2,
            check_connectivity=True, voltage_depend_loads=True, init="results", mode=None):
 
     """
@@ -42,9 +42,10 @@ def to_ppc(net, calculate_voltage_angles=False, trafo_model="t", r_switch=0.0,
             it is less exact than the T-model. It is only recommended for validation with other \
             software that uses the pi-model.
 
-        **r_switch** (float, 0.0) - resistance of bus-bus-switches. If impedance is zero, buses
-        connected by a closed bus-bus switch are fused to model an ideal bus. Otherwise, they are
-        modelled as branches with resistance r_switch.
+        **switch_rx_ratio** (float, 2) - rx_ratio of bus-bus-switches. If impedance is zero, \
+        buses connected by a closed bus-bus switch are fused to model an ideal bus. \
+        Otherwise, they are modelled as branches with resistance defined as z_ohm column in \
+        switch table and this parameter 
 
         **check_connectivity** (bool, True) - Perform an extra connectivity test after the
         conversion from pandapower to PYPOWER
@@ -54,7 +55,7 @@ def to_ppc(net, calculate_voltage_angles=False, trafo_model="t", r_switch=0.0,
 
         **voltage_depend_loads** (bool, True) - consideration of voltage-dependent loads. \
         If False, net.load.const_z_percent and net.load.const_i_percent are not considered, i.e. \
-        net.load.p_kw and net.load.q_kvar are considered as constant-power loads.
+        net.load.p_mw and net.load.q_mvar are considered as constant-power loads.
 
         **init** (str, "results") - initialization method of the converter
         pandapower ppc converter supports two methods for initializing the converter:
@@ -83,7 +84,7 @@ def to_ppc(net, calculate_voltage_angles=False, trafo_model="t", r_switch=0.0,
         ppc = pc.to_ppc(net)
 
     """
-    if (not (net["polynomial_cost"].empty and net["piecewise_linear_cost"].empty) and
+    if (not (net["poly_cost"].empty and net["pwl_cost"].empty) and
        mode is None) or mode == "opf":
         mode = "opf"
         _check_necessary_opf_parameters(net, logger)
@@ -94,8 +95,8 @@ def to_ppc(net, calculate_voltage_angles=False, trafo_model="t", r_switch=0.0,
     net["_options"] = {}
     _add_ppc_options(net, calculate_voltage_angles=calculate_voltage_angles,
                      trafo_model=trafo_model, check_connectivity=check_connectivity,
-                     mode=mode, copy_constraints_to_ppc=True,
-                     r_switch=r_switch, init_vm_pu=init, init_va_degree=init, enforce_q_lims=True,
+                     mode=mode, switch_rx_ratio=switch_rx_ratio, init_vm_pu=init,
+                     init_va_degree=init, enforce_q_lims=True,
                      recycle=None, voltage_depend_loads=voltage_depend_loads)
     #  do the conversion
     _, ppci = _pd2ppc(net)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2016-2018 by University of Kassel and Fraunhofer Institute for Energy Economics
+# Copyright (c) 2016-2019 by University of Kassel and Fraunhofer Institute for Energy Economics
 # and Energy System Technology (IEE), Kassel. All rights reserved.
 
 
@@ -9,17 +9,17 @@ from time import time  # alternatively use import timeit.default_timer as time
 
 import numpy as np
 import scipy as sp
-from pandapower.idx_brch import F_BUS, T_BUS, BR_R, BR_X, BR_B, TAP, BR_STATUS, SHIFT
-from pandapower.idx_bus import BUS_I, BUS_TYPE, GS, BS
-from pandapower.idx_gen import GEN_BUS, QG, QMAX, QMIN, GEN_STATUS, VG
-from pandapower.pf.makeSbus import makeSbus
+from pandapower.pypower.idx_brch import F_BUS, T_BUS, BR_R, BR_X, BR_B, TAP, BR_STATUS, SHIFT
+from pandapower.pypower.idx_bus import BUS_I, BUS_TYPE, GS, BS
+from pandapower.pypower.idx_gen import GEN_BUS, QG, QMAX, QMIN, GEN_STATUS, VG
+from pandapower.pypower.makeSbus import makeSbus
 from scipy.sparse import csr_matrix, csgraph
 from six import iteritems
 
 from pandapower.auxiliary import ppException
-from pandapower.pf.bustypes import bustypes
-from pandapower.pf.newtonpf import _evaluate_Fx, _check_for_convergence
-from pandapower.pf.pfsoln import pfsoln
+from pandapower.pypower.bustypes import bustypes
+from pandapower.pypower.newtonpf import _evaluate_Fx, _check_for_convergence
+from pandapower.pypower.pfsoln import pfsoln
 from pandapower.pf.run_newton_raphson_pf import _get_Y_bus
 from pandapower.pf.runpf_pypower import _import_numba_extensions_if_flag_is_true
 from pandapower.pf.ppci_variables import _get_pf_variables_from_ppci
@@ -233,17 +233,16 @@ def _bfswpf(DLF, bus, gen, branch, baseMVA, Ybus, Sbus, V0, ref, pv, pq, buses_o
     :return: power flow result
     """
     enforce_q_lims = options["enforce_q_lims"]
-    tolerance_kva = options["tolerance_kva"]
+    tolerance_mva = options["tolerance_mva"]
     max_iteration = options["max_iteration"]
     voltage_depend_loads = options["voltage_depend_loads"]
     # setting options
-    tolerance_mva = tolerance_kva * 1e-3
     max_it = max_iteration  # maximum iterations
     verbose = kwargs["VERBOSE"]  # verbose is set in run._runpppf() #
 
     # tolerance for the inner loop for PV nodes
-    if 'tolerance_kva_pv' in kwargs:
-        tol_mva_inner = kwargs['tolerance_kva_pv'] * 1e-3
+    if 'tolerance_mva_pv' in kwargs:
+        tol_mva_inner = kwargs['tolerance_mva_pv']
     else:
         tol_mva_inner = 1.e-2
 
@@ -358,12 +357,12 @@ def _bfswpf(DLF, bus, gen, branch, baseMVA, Ybus, Sbus, V0, ref, pv, pq, buses_o
 
 def _get_options(options):
     enforce_q_lims = options['enforce_q_lims']
-    tolerance_kva = options['tolerance_kva']
+    tolerance_mva = options['tolerance_mva']
     max_iteration = options['max_iteration']
     calculate_voltage_angles = options['calculate_voltage_angles']
     numba = options["numba"]
 
-    return enforce_q_lims, tolerance_kva, max_iteration, calculate_voltage_angles, numba
+    return enforce_q_lims, tolerance_mva, max_iteration, calculate_voltage_angles, numba
 
 
 def _run_bfswpf(ppci, options, **kwargs):
@@ -381,7 +380,7 @@ def _run_bfswpf(ppci, options, **kwargs):
 
     baseMVA, bus, gen, branch, ref, pv, pq, _, gbus, V0, ref_gens = _get_pf_variables_from_ppci(ppci)
 
-    enforce_q_lims, tolerance_kva, max_iteration, calculate_voltage_angles, numba = _get_options(options)
+    enforce_q_lims, tolerance_mva, max_iteration, calculate_voltage_angles, numba = _get_options(options)
 
     numba, makeYbus = _import_numba_extensions_if_flag_is_true(numba)
 

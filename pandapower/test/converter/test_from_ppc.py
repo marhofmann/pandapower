@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2016-2018 by University of Kassel and Fraunhofer Institute for Energy Economics
+# Copyright (c) 2016-2019 by University of Kassel and Fraunhofer Institute for Energy Economics
 # and Energy System Technology (IEE), Kassel. All rights reserved.
 
 
@@ -12,7 +12,12 @@ import pytest
 import pandapower as pp
 import pandapower.networks as pn
 from pandapower.converter import from_ppc, validate_from_ppc, to_ppc
-import pypower.case24_ieee_rts as c24
+
+try:
+    import pypower.case24_ieee_rts as c24
+    pypower_installed = True
+except ImportError:
+    pypower_installed = False
 
 try:
     import pplog as logging
@@ -20,8 +25,8 @@ except:
     import logging
 
 logger = logging.getLogger(__name__)
-max_diff_values1 = {"bus_vm_pu": 1e-6, "bus_va_degree": 1e-5, "branch_p_kw": 1e-3,
-                    "branch_q_kvar": 1e-3, "gen_p_kw": 1e-3, "gen_q_kvar": 1e-3}
+max_diff_values1 = {"bus_vm_pu": 1e-6, "bus_va_degree": 1e-5, "branch_p_mw": 1e-3,
+                    "branch_q_mvar": 1e-3, "gen_p_mw": 1e-3, "gen_q_mvar": 1e-3}
 
 
 def get_testgrids(name, filename):
@@ -78,8 +83,8 @@ def test_pypower_cases():
         logger.debug('%s has been checked successfully.' % i)
     # --- Because there is a pypower power flow failure in generator results in case9 (which is not
     # in matpower) another max_diff_values must be used to receive an successful validation
-    max_diff_values2 = {"vm_pu": 1e-6, "va_degree": 1e-5, "p_branch_kw": 1e-3,
-                        "q_branch_kvar": 1e-3, "p_gen_kw": 1e3, "q_gen_kvar": 1e3}
+    max_diff_values2 = {"vm_pu": 1e-6, "va_degree": 1e-5, "p_branch_mw": 1e-3,
+                        "q_branch_mvar": 1e-3, "p_gen_mw": 1e3, "q_gen_mvar": 1e3}
     ppc = get_testgrids('case9', 'pypower_cases.p')
     net = from_ppc(ppc, f_hz=60)
     assert validate_from_ppc(ppc, net, max_diff_values=max_diff_values2)
@@ -109,12 +114,11 @@ def test_case9_conversion():
     pp.runopp(net2)
     assert pp.nets_equal(net, net2, check_only_results=True, tol=1e-10)
 
-
+@pytest.mark.skipif(pypower_installed==False, reason="needs pypower installation")
 def test_case24():
     net = from_ppc(c24.case24_ieee_rts())
-    pp.runopp(net, verbose=True)
+    pp.runopp(net)
     assert net.OPF_converged
 
 if __name__ == '__main__':
-    test_case24()
-#    pytest.main([__file__])
+    pytest.main([__file__, "-xs"])

@@ -2,9 +2,13 @@
 External Grid
 =============
 
+.. note::
+
+   Power values of external grids are given in the generator system, therefore p_mw is negative if the external grid is absorbing power and positive if it is supplying/generating power.
+
 .. seealso::
     :ref:`Unit Systems and Conventions <conventions>`
-    
+   
 Create Function
 =====================
 
@@ -64,10 +68,6 @@ Active and reactive power feed-in / consumption at the slack node is a result of
    :nowrap:
    
    \begin{align*}
-    p\_kw &= P_{eg} \\
-    q\_kvar &= Q_{eg}
+    p\_mw &= P_{eg} \\
+    q\_mvar &= Q_{eg}
     \end{align*}
-    
-.. note::
-
-   All power values are given in the consumer system, therefore p_kw is positive if the external grid is absorbing power and negative if it is supplying power.

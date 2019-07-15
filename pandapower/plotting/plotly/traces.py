@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2016-2018 by University of Kassel and Fraunhofer Institute for Energy Economics
+# Copyright (c) 2016-2019 by University of Kassel and Fraunhofer Institute for Energy Economics
 # and Energy System Technology (IEE), Kassel. All rights reserved.
 
 
@@ -8,6 +8,7 @@ import math
 
 import numpy as np
 import pandas as pd
+from packaging import version
 
 from pandapower.plotting.plotly.get_colors import get_plotly_color, get_plotly_cmap
 from pandapower.plotting.plotly.mapbox_plot import _on_map_test, _get_mapbox_token, MapboxTokenMissing
@@ -19,8 +20,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 try:
-    from packaging import version
-    from plotly import __version__
+    from plotly import __version__ as plotly_version
     from plotly.graph_objs.scatter.marker import ColorBar
     from plotly.graph_objs import Figure, Layout
     from plotly.graph_objs.layout import XAxis, YAxis
@@ -28,15 +28,14 @@ try:
     from plotly.graph_objs.scattermapbox import Line as scmLine
     from plotly.graph_objs.scattermapbox import Marker as scmMarker
 except ImportError:
-    logger.debug("Failed to import plotly - interactive plotting will not be available")
+    logger.info("Failed to import plotly - interactive plotting will not be available")
 
 
 def version_check():
-    if version.parse(__version__) < version.parse("3.1.1"):
+    if version.parse(plotly_version) < version.parse("3.1.1"):
         raise UserWarning("Your plotly version {} is no longer supported.\r\n"
                           "Please upgrade your python-plotly installation, "
                           "e.g., via pip install --upgrade plotly".format(__version__))
-
 
 def _in_ipynb():
     """
@@ -53,7 +52,7 @@ def sum_line_length(pts):
     return line_length
 
 
-def get_line_mid(coord):
+def get_line_neutral(coord):
     if len(coord) == 1:
         return coord[0]
     half_length = sum_line_length(coord) / 2.0
@@ -107,7 +106,7 @@ def create_edge_center_trace(line_trace, size=1, patch_type="circle", color="whi
         x, y = [], []
         for trace in line_trace:
             coord = list(zip(trace["x"], trace["y"]))
-            mid_coord = get_line_mid(coord)
+            mid_coord = get_line_neutral(coord)
             x.append(mid_coord[0])
             y.append(mid_coord[1])
 

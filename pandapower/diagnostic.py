@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2016-2018 by University of Kassel and Fraunhofer Institute for Energy Economics
+# Copyright (c) 2016-2019 by University of Kassel and Fraunhofer Institute for Energy Economics
 # and Energy System Technology (IEE), Kassel. All rights reserved.
 
 
@@ -115,16 +115,13 @@ def diagnostic(net, report_style='detailed', warnings_only=False, return_result_
         "nom_voltage_tolerance": nom_voltage_tolerance,
         "numba_tolerance": numba_tolerance
     }
-    if warnings_only:
-        logger.setLevel(logging.WARNING)
-    else:
-        logger.setLevel(logging.INFO)
-    logger.propagate = False
 
     if report_style == 'detailed':
-        diagnostic_report(net, diag_results, diag_errors, diag_params, compact_report=False)
+        diagnostic_report(net, diag_results, diag_errors, diag_params, compact_report=False,
+                          warnings_only=warnings_only)
     elif report_style == 'compact':
-        diagnostic_report(net, diag_results, diag_errors, diag_params, compact_report=True)
+        diagnostic_report(net, diag_results, diag_errors, diag_params, compact_report=True,
+                          warnings_only=warnings_only)
     if return_result_dict:
         return diag_results
 
@@ -260,26 +257,26 @@ def invalid_values(net):
                                  ('x_ohm_per_km', '>=0'), ('c_nf_per_km', '>=0'),
                                  ('max_i_ka', '>0'), ('df', '0<x<=1'), ('in_service', 'boolean')],
                         'trafo': [('hv_bus', 'positive_integer'), ('lv_bus', 'positive_integer'),
-                                  ('sn_kva', '>0'), ('vn_hv_kv', '>0'), ('vn_lv_kv', '>0'),
-                                  ('vscr_percent', '>=0'),
-                                  ('vsc_percent', '>0'), ('pfe_kw', '>=0'), ('i0_percent', '>=0'),
+                                  ('sn_mva', '>0'), ('vn_hv_kv', '>0'), ('vn_lv_kv', '>0'),
+                                  ('vkr_percent', '>=0'),
+                                  ('vk_percent', '>0'), ('pfe_kw', '>=0'), ('i0_percent', '>=0'),
                                   ('in_service', 'boolean')],
                         'trafo3w': [('hv_bus', 'positive_integer'), ('mv_bus', 'positive_integer'),
                                     ('lv_bus', 'positive_integer'),
-                                    ('sn_hv_kva', '>0'), ('sn_mv_kva', '>0'), ('sn_lv_kva', '>0'),
+                                    ('sn_hv_mva', '>0'), ('sn_mv_mva', '>0'), ('sn_lv_mva', '>0'),
                                     ('vn_hv_kv', '>0'), ('vn_mv_kv', '>0'), ('vn_lv_kv', '>0'),
-                                    ('vscr_hv_percent', '>=0'), ('vscr_mv_percent', '>=0'),
-                                    ('vscr_lv_percent', '>=0'), ('vsc_hv_percent', '>0'),
-                                    ('vsc_mv_percent', '>0'), ('vsc_lv_percent', '>0'),
+                                    ('vkr_hv_percent', '>=0'), ('vkr_mv_percent', '>=0'),
+                                    ('vkr_lv_percent', '>=0'), ('vk_hv_percent', '>0'),
+                                    ('vk_mv_percent', '>0'), ('vk_lv_percent', '>0'),
                                     ('pfe_kw', '>=0'), ('i0_percent', '>=0'),
                                     ('in_service', 'boolean')],
-                        'load': [('bus', 'positive_integer'), ('p_kw', 'number'),
-                                 ('q_kvar', 'number'),
+                        'load': [('bus', 'positive_integer'), ('p_mw', 'number'),
+                                 ('q_mvar', 'number'),
                                  ('scaling', '>=0'), ('in_service', 'boolean')],
-                        'sgen': [('bus', 'positive_integer'), ('p_kw', 'number'),
-                                 ('q_kvar', 'number'),
+                        'sgen': [('bus', 'positive_integer'), ('p_mw', 'number'),
+                                 ('q_mvar', 'number'),
                                  ('scaling', '>=0'), ('in_service', 'boolean')],
-                        'gen': [('bus', 'positive_integer'), ('p_kw', 'number'),
+                        'gen': [('bus', 'positive_integer'), ('p_mw', 'number'),
                                 ('scaling', '>=0'), ('in_service', 'boolean')],
                         'ext_grid': [('bus', 'positive_integer'), ('vm_pu', '>0'),
                                      ('va_degree', 'number')],
@@ -800,16 +797,16 @@ def wrong_reference_system(net):
 
     """
     check_results = {}
-    neg_loads = list(net.load[net.load.p_kw < 0].index)
-    pos_gens = list(net.gen[net.gen.p_kw > 0].index)
-    pos_sgens = list(net.sgen[net.sgen.p_kw > 0].index)
+    neg_loads = list(net.load[net.load.p_mw < 0].index)
+    neg_gens = list(net.gen[net.gen.p_mw < 0].index)
+    neg_sgens = list(net.sgen[net.sgen.p_mw < 0].index)
 
     if neg_loads:
         check_results['loads'] = neg_loads
-    if pos_gens:
-        check_results['gens'] = pos_gens
-    if pos_sgens:
-        check_results['sgens'] = pos_sgens
+    if neg_gens:
+        check_results['gens'] = neg_gens
+    if neg_sgens:
+        check_results['sgens'] = neg_sgens
 
     if check_results:
         return check_results
@@ -881,7 +878,7 @@ def deviation_from_std_type(net):
                 if std_type in net.std_types[key].keys():
                     std_type_values = net.std_types[key][std_type]
                     for param in std_type_values.keys():
-                        if param == "tp_pos":
+                        if param == "tap_pos":
                             continue
                         if param in net[key].columns:
                             try:
@@ -920,11 +917,10 @@ def parallel_switches(net):
 
     """
     parallel_switches = []
-    compare_parameters = ['bus', 'element']
+    compare_parameters = ['bus', 'element', 'et']
     parallels_bus_and_element = list(
-        net.switch.groupby(compare_parameters).count().query('et > 1').index)
-    for bus, element in parallels_bus_and_element:
-        parallel_switches.append(list(net.switch[(net.switch.bus == bus)
-                                                 & (net.switch.element == element)].index))
+        net.switch.groupby(compare_parameters).count().query('closed > 1').index)
+    for bus, element, et in parallels_bus_and_element:
+        parallel_switches.append(list(net.switch.query('bus==@bus & element==@element & et==@et').index))
     if parallel_switches:
         return parallel_switches
